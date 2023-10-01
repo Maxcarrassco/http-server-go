@@ -7,6 +7,36 @@ import (
 	"os"
 )
 
+
+type Request struct {
+	Method, Path, HTTPVersion string
+	Headers map[string]string
+}
+
+func NewRequest(buf []byte) Request {
+	s := strings.SplitN(string(buf), " ", 3)
+	sH := strings.Split(s[2], "\r\n")
+	res := Request{
+		Method: s[0],
+		Path: s[1],
+		HTTPVersion: sH[0],
+		Headers: map[string]string{},
+	}
+	for _, v := range sH {
+		kargs := strings.Split(v, ": ")
+		if len(kargs) > 1 {
+			res.Headers[kargs[0]] = kargs[1]
+		}
+
+	}
+	return res
+}
+
+func WriteTextRes(conn net.Conn, body string, status int) {
+	res := fmt.Sprintf("HTTP/1.1 %d OK\r\nContent-Type: text/plain\nContent-Length: %d\r\n\r\n%s", status, len(body), body)
+	conn.Write([]byte(res))
+}
+
 func main() {
 	fmt.Println("Logs from your program will appear here!")
 
@@ -21,17 +51,21 @@ func main() {
 	 	os.Exit(1)
 	 }
 	b := make([]byte, 1024)
-	_, err = conn.Read(b)
+	bytesRead, err := conn.Read(b)
 	if err != nil {
 	 	fmt.Println("Error reading data: ", err.Error())
 	 	os.Exit(1)
 	 }
 	if len(b) > 0 {
-		data := string(b)
-		path := strings.Split(data, " ")[1]
-		if len(path) >= 5 && path[:5] == "/echo" {
+		res := NewRequest(b[:bytesRead])
+		path := res.Path
+		paths := strings.Split(path, "/")
+		if  paths[1] == "echo" {
 			body := path[6:]
-			conn.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\nContent-Length: %d\r\n\r\n%s", len(body), body)))
+			WriteTextRes(conn, body, 200)
+		} else if paths[1] == "user-agent" {
+			agent := res.Headers["User-Agent"]
+			WriteTextRes(conn, agent, 200)
 		} else if path == "/" {
 			conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
 		} else {
