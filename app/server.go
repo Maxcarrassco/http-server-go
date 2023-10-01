@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 	// Uncomment this block to pass the first stage
 	"net"
 	"os"
@@ -18,6 +19,7 @@ func main() {
 	 	os.Exit(1)
 	 }
 	conn, err := l.Accept()
+	defer conn.Close()
 	if err != nil {
 	 	fmt.Println("Error accepting connection: ", err.Error())
 	 	os.Exit(1)
@@ -25,8 +27,13 @@ func main() {
 	b := make([]byte, 100)
 	conn.Read(b)
 	if len(b) > 0 {
-		fmt.Println(string(b))
-		conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
+		data := string(b)
+		path := strings.Split(data, " ")[1]
+		if path != "/" {
+			conn.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
+		} else {
+			conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
+		}
 	}
 	
 }
