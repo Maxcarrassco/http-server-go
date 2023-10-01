@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"strings"
@@ -10,16 +12,19 @@ import (
 type Request struct {
 	Method, Path, HTTPVersion string
 	Headers                   map[string]string
+	Body []byte
 }
 
 func NewRequest(buf []byte) Request {
 	s := strings.SplitN(string(buf), " ", 3)
+	body := strings.Split(s[2], "\r\n\r\n")
 	sH := strings.Split(s[2], "\r\n")
 	res := Request{
 		Method:      s[0],
 		Path:        s[1],
 		HTTPVersion: sH[0],
 		Headers:     map[string]string{},
+		Body: []byte(body[1]),
 	}
 	for _, v := range sH {
 		kargs := strings.Split(v, ": ")
@@ -62,11 +67,31 @@ func HandleRequest(conn net.Conn) {
 			filename := path[6:]
 			dir := os.Args[2]
 			filePath := fmt.Sprintf("%s/%s", dir, filename)
-			file, err := os.ReadFile(filePath)
-			if err != nil {
-				conn.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
+			if res.Method == "GET" {
+				file, err := os.ReadFile(filePath)
+				if err != nil {
+					conn.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
+				} else {
+					WriteFileRes(conn, file, 200)
+				}
 			} else {
-				WriteFileRes(conn, file, 200)
+				r := bytes.NewReader(res.Body)
+				data, err := io.ReadAll(r)
+				if err != nil {
+					conn.Write([]byte("HTTP/1.1 400 Unproccessed Request\r\n\r\n"))
+					return
+				}
+				file, err := os.Create(filePath)
+				if err != nil {
+					conn.Write([]byte("HTTP/1.1 400 Unproccessed Request\r\n\r\n"))
+					return
+				}
+				_, err = file.Write(data)
+				if err != nil {
+					conn.Write([]byte("HTTP/1.1 400 Unproccessed Request\r\n\r\n"))
+					return
+				}
+				conn.Write([]byte("HTTP/1.1 201 created\r\n\r\n"))
 			}
 		} else if path == "/" {
 			conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
