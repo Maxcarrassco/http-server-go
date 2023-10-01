@@ -1,4 +1,0 @@
-GET /echo/abc HTTP/1.1
-
-Host: localhost:4221
-User-Agent: curl/7.64.1
