@@ -31,5 +31,6 @@ func main() {
 			conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
 		}
 	}
+	conn.Close()
 	
 }
