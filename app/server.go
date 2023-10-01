@@ -20,8 +20,12 @@ func main() {
 	 	fmt.Println("Error accepting connection: ", err.Error())
 	 	os.Exit(1)
 	 }
-	b := make([]byte, 100)
-	conn.Read(b)
+	b := make([]byte, 1024)
+	_, err = conn.Read(b)
+	if err != nil {
+	 	fmt.Println("Error reading data: ", err.Error())
+	 	os.Exit(1)
+	 }
 	if len(b) > 0 {
 		data := string(b)
 		path := strings.Split(data, " ")[1]
