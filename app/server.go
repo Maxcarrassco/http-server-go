@@ -22,12 +22,11 @@ func main() {
 	 	fmt.Println("Error accepting connection: ", err.Error())
 	 	os.Exit(1)
 	 }
-	for {
-		b := make([]byte, 100)
-		conn.Read(b)
-		if len(b) > 0 {
-			fmt.Println(string(b))
-			conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
-		}
+	b := make([]byte, 100)
+	conn.Read(b)
+	if len(b) > 0 {
+		fmt.Println(string(b))
+		conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
 	}
+	
 }
