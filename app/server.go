@@ -29,10 +29,14 @@ func main() {
 	if len(b) > 0 {
 		data := string(b)
 		path := strings.Split(data, " ")[1]
-		if path != "/" {
-			conn.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
-		} else {
+		b := strings.Split(path, "/")
+		if len(path) >= 5 && path[:5] == "/echo" {
+			body := b[2]
+			conn.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: plain/text\nContent-Length: %d\r\n\r\n%s", len(body), body)))
+		} else if path == "/" {
 			conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
+		} else {
+			conn.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
 		}
 	}
 	conn.Close()
