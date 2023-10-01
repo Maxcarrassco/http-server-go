@@ -30,7 +30,7 @@ func main() {
 		data := string(b)
 		path := strings.Split(data, " ")[1]
 		if len(path) >= 5 && path[:5] == "/echo" {
-			body := path[5:]
+			body := path[6:]
 			conn.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\nContent-Length: %d\r\n\r\n%s", len(body), body)))
 		} else if path == "/" {
 			conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
